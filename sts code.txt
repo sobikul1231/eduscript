@@ -1,0 +1,845 @@
+// ============================================
+// RAKIB SCRIPT - IELTS Audio Controller
+// ============================================
+(function() {
+    'use strict';
+    
+    console.log('🎵 RAKIB SCRIPT v2.0 - IELTS Optimized');
+    
+    // Remove if exists
+    const existing = document.getElementById('rakib-controller');
+    if (existing) existing.remove();
+    
+    // Create simple but effective controller
+    const controller = document.createElement('div');
+    controller.id = 'rakib-controller';
+    controller.innerHTML = `
+        <div class="rakib-main">
+            <!-- Header -->
+            <div class="rakib-header" id="rakib-drag">
+                <div class="header-left">
+                    <span class="rakib-logo">🎵</span>
+                    <div>
+                        <div class="rakib-title">RAKIB SCRIPT</div>
+                        <div class="rakib-sub">IELTS Audio Control</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="ctrl-btn minimize">_</button>
+                    <button class="ctrl-btn close">×</button>
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div class="status-bar" id="status">
+                <span class="status-icon">🔍</span>
+                <span class="status-text">Initializing...</span>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls-container">
+                <!-- Time Display -->
+                <div class="time-section">
+                    <div class="time-display">
+                        <span id="current">0:00</span> / <span id="total">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Transport -->
+                <div class="transport-section">
+                    <div class="transport-row">
+                        <button class="trans-btn big back-10" title="Back 10s">⏪⏪</button>
+                        <button class="trans-btn back-5" title="Back 5s">⏪</button>
+                        <button class="trans-btn play" title="Play">▶️</button>
+                        <button class="trans-btn pause" title="Pause">⏸️</button>
+                        <button class="trans-btn forward-5" title="Forward 5s">⏩</button>
+                        <button class="trans-btn big forward-10" title="Forward 10s">⏩⏩</button>
+                    </div>
+                </div>
+                
+                <!-- Speed Control -->
+                <div class="speed-section">
+                    <div class="section-title">Speed Control</div>
+                    <div class="speed-buttons">
+                        <button class="speed-btn" data-speed="0.25">0.25x</button>
+                        <button class="speed-btn" data-speed="0.5">0.5x</button>
+                        <button class="speed-btn" data-speed="0.75">0.75x</button>
+                        <button class="speed-btn active" data-speed="1">1.0x</button>
+                        <button class="speed-btn" data-speed="1.25">1.25x</button>
+                        <button class="speed-btn" data-speed="1.5">1.5x</button>
+                        <button class="speed-btn" data-speed="2">2.0x</button>
+                    </div>
+                    <div class="speed-slider-container">
+                        <input type="range" id="speed-slider" min="0.1" max="3" step="0.1" value="1">
+                        <span id="speed-value">1.0x</span>
+                    </div>
+                </div>
+                
+                <!-- Volume Control -->
+                <div class="volume-section">
+                    <div class="section-title">Volume</div>
+                    <div class="volume-control">
+                        <span class="vol-icon">🔈</span>
+                        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7">
+                        <span class="vol-icon">🔊</span>
+                        <span id="vol-percent">70%</span>
+                    </div>
+                </div>
+                
+                <!-- Manual Audio URL -->
+                <div class="url-section">
+                    <div class="section-title">Manual Audio Source</div>
+                    <div class="url-input">
+                        <input type="text" id="audio-url" placeholder="Paste audio URL from Network tab">
+                        <button id="load-url">Load</button>
+                    </div>
+                    <div class="url-hint">
+                        <small>Get URL from: F12 → Network → Media → Right click → Copy link address</small>
+                    </div>
+                </div>
+                
+                <!-- Draw Section -->
+                <div class="draw-section">
+                    <div class="section-title draw-title">
+                        <span>Draw Mode</span>
+                        <button class="draw-toggle">✏️ Toggle</button>
+                    </div>
+                    <canvas id="draw-canvas" width="300" height="100"></canvas>
+                    <div class="draw-tools">
+                        <button class="tool-btn" data-color="red">🔴</button>
+                        <button class="tool-btn" data-color="blue">🔵</button>
+                        <button class="tool-btn" data-color="green">🟢</button>
+                        <button class="tool-btn" data-color="white">⚪</button>
+                        <button class="tool-btn" id="clear-draw">Clear</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                <span>RAKIB SCRIPT v2.0 | IELTS Mode</span>
+                <button class="help-btn">Help</button>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        #rakib-controller {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000000;
+            font-family: Arial, sans-serif;
+        }
+        
+        .rakib-main {
+            background: linear-gradient(145deg, #1a237e, #311b92);
+            color: white;
+            border-radius: 15px;
+            width: 350px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .rakib-header {
+            background: linear-gradient(90deg, #0d47a1, #311b92);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rakib-logo {
+            font-size: 28px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .rakib-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .rakib-sub {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        .ctrl-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 16px;
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .close:hover {
+            background: #ff4757;
+        }
+        
+        /* Status */
+        .status-bar {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .status-icon {
+            margin-right: 8px;
+        }
+        
+        /* Controls Container */
+        .controls-container {
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* Time Section */
+        .time-section {
+            margin-bottom: 20px;
+        }
+        
+        .time-display {
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        #current {
+            color: #00d2ff;
+            font-weight: bold;
+        }
+        
+        #total {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        /* Transport */
+        .transport-section {
+            margin: 20px 0;
+        }
+        
+        .transport-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .trans-btn {
+            background: linear-gradient(145deg, #1e88e5, #0d47a1);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .trans-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .trans-btn.big {
+            width: 60px;
+            font-size: 24px;
+        }
+        
+        .play { background: linear-gradient(145deg, #00c853, #1b5e20); }
+        .pause { background: linear-gradient(145deg, #ff9100, #e65100); }
+        .back-5, .back-10 { background: linear-gradient(145deg, #ff5722, #bf360c); }
+        .forward-5, .forward-10 { background: linear-gradient(145deg, #aa00ff, #4a148c); }
+        
+        /* Speed Control */
+        .speed-section, .volume-section, .url-section, .draw-section {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .speed-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .speed-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 8px 5px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .speed-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .speed-btn.active {
+            background: linear-gradient(145deg, #00d2ff, #3a7bd5);
+            font-weight: bold;
+        }
+        
+        .speed-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #speed-slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #00d2ff, #3a7bd5);
+            border-radius: 3px;
+        }
+        
+        #speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            border: 3px solid #00d2ff;
+            cursor: pointer;
+        }
+        
+        #speed-value {
+            font-weight: bold;
+            color: #00d2ff;
+            min-width: 40px;
+        }
+        
+        /* Volume */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #volume {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #00e676, #00c853);
+            border-radius: 3px;
+        }
+        
+        #volume::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            border: 3px solid #00e676;
+        }
+        
+        #vol-percent {
+            min-width: 40px;
+            text-align: right;
+            color: #00e676;
+            font-weight: bold;
+        }
+        
+        /* URL Input */
+        .url-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        #audio-url {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: white;
+        }
+        
+        #load-url {
+            background: #00d2ff;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .url-hint small {
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+        }
+        
+        /* Draw Section */
+        .draw-title {
+            margin-bottom: 15px;
+        }
+        
+        .draw-toggle {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        #draw-canvas {
+            width: 100%;
+            height: 100px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+            border: 1px dashed rgba(255,255,255,0.2);
+            display: block;
+            margin-bottom: 10px;
+            cursor: crosshair;
+        }
+        
+        .draw-tools {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .tool-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .help-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        /* Minimized State */
+        .minimized {
+            width: 200px;
+            height: 60px;
+            overflow: hidden;
+        }
+        
+        .minimized .controls-container,
+        .minimized .footer {
+            display: none;
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(controller);
+    
+    // ===== VARIABLES =====
+    let currentAudio = null;
+    let isMinimized = false;
+    let isDrawing = false;
+    let drawColor = 'red';
+    let drawSize = 3;
+    
+    // ===== INITIALIZE =====
+    function init() {
+        console.log('🔧 RAKIB SCRIPT - Initializing...');
+        
+        // Try to find existing audio
+        findAudio();
+        
+        // Setup event listeners
+        setupControls();
+        setupDrawCanvas();
+        setupDrag();
+        
+        // Update status
+        updateStatus('Ready - Use manual URL if auto-detection fails');
+        
+        console.log('✅ RAKIB SCRIPT - Ready!');
+    }
+    
+    // ===== FIND AUDIO =====
+    function findAudio() {
+        // Method 1: Direct audio/video elements
+        const mediaElements = document.querySelectorAll('audio, video');
+        
+        if (mediaElements.length > 0) {
+            currentAudio = mediaElements[0];
+            updateStatus(`Found ${mediaElements.length} media element(s)`);
+            bindAudioEvents();
+            return;
+        }
+        
+        // Method 2: Check for iframes
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            try {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const iframeMedia = iframeDoc.querySelectorAll('audio, video');
+                if (iframeMedia.length > 0) {
+                    currentAudio = iframeMedia[0];
+                    updateStatus('Found media in iframe');
+                    bindAudioEvents();
+                }
+            } catch (e) {
+                // Cross-origin error
+            }
+        });
+        
+        if (!currentAudio) {
+            updateStatus('No auto-detected audio. Use Manual URL.');
+        }
+    }
+    
+    // ===== MANUAL AUDIO LOAD =====
+    function loadManualAudio(url) {
+        if (!url || !url.includes('http')) {
+            alert('Please enter a valid audio URL');
+            return;
+        }
+        
+        // Remove existing audio
+        const oldAudio = document.getElementById('rakib-manual-audio');
+        if (oldAudio) oldAudio.remove();
+        
+        // Create new audio element
+        const audio = document.createElement('audio');
+        audio.id = 'rakib-manual-audio';
+        audio.src = url;
+        audio.controls = false;
+        audio.style.display = 'none';
+        
+        document.body.appendChild(audio);
+        currentAudio = audio;
+        
+        bindAudioEvents();
+        updateStatus(`Loaded: ${url.substring(0, 50)}...`);
+        
+        // Auto play
+        setTimeout(() => {
+            audio.play().catch(e => console.log('Auto-play blocked:', e));
+        }, 500);
+    }
+    
+    // ===== BIND AUDIO EVENTS =====
+    function bindAudioEvents() {
+        if (!currentAudio) return;
+        
+        currentAudio.addEventListener('timeupdate', updateTime);
+        currentAudio.addEventListener('loadedmetadata', updateTime);
+        currentAudio.addEventListener('play', () => updateStatus('Playing'));
+        currentAudio.addEventListener('pause', () => updateStatus('Paused'));
+        currentAudio.addEventListener('ended', () => updateStatus('Finished'));
+        
+        // Update volume slider
+        const volSlider = document.getElementById('volume');
+        if (volSlider) {
+            volSlider.value = currentAudio.volume;
+            document.getElementById('vol-percent').textContent = 
+                Math.round(currentAudio.volume * 100) + '%';
+        }
+        
+        updateTime();
+    }
+    
+    // ===== UPDATE FUNCTIONS =====
+    function updateTime() {
+        if (!currentAudio) return;
+        
+        const current = document.getElementById('current');
+        const total = document.getElementById('total');
+        const progress = document.getElementById('progress');
+        
+        if (current && total && progress) {
+            current.textContent = formatTime(currentAudio.currentTime);
+            total.textContent = formatTime(currentAudio.duration || 0);
+            
+            const percent = currentAudio.duration ? 
+                (currentAudio.currentTime / currentAudio.duration * 100) : 0;
+            progress.style.width = percent + '%';
+        }
+    }
+    
+    function updateStatus(message) {
+        const status = document.getElementById('status');
+        if (status) {
+            const icon = message.includes('Playing') ? '▶️' : 
+                        message.includes('Paused') ? '⏸️' : 
+                        message.includes('Found') ? '✅' : 'ℹ️';
+            
+            status.innerHTML = `<span class="status-icon">${icon}</span>
+                               <span class="status-text">${message}</span>`;
+        }
+    }
+    
+    function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+    
+    // ===== CONTROL FUNCTIONS =====
+    function setupControls() {
+        // Play/Pause
+        document.querySelector('.play').onclick = () => {
+            if (currentAudio) currentAudio.play();
+        };
+        
+        document.querySelector('.pause').onclick = () => {
+            if (currentAudio) currentAudio.pause();
+        };
+        
+        // Skip buttons
+        document.querySelector('.back-5').onclick = () => skip(-5);
+        document.querySelector('.back-10').onclick = () => skip(-10);
+        document.querySelector('.forward-5').onclick = () => skip(5);
+        document.querySelector('.forward-10').onclick = () => skip(10);
+        
+        function skip(seconds) {
+            if (!currentAudio) return;
+            currentAudio.currentTime += seconds;
+            updateTime();
+        }
+        
+        // Speed controls
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.onclick = function() {
+                if (!currentAudio) return;
+                
+                const speed = parseFloat(this.dataset.speed);
+                currentAudio.playbackRate = speed;
+                
+                // Update UI
+                document.querySelectorAll('.speed-btn').forEach(b => 
+                    b.classList.remove('active'));
+                this.classList.add('active');
+                
+                document.getElementById('speed-slider').value = speed;
+                document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
+                
+                updateStatus(`Speed: ${speed}x`);
+            };
+        });
+        
+        // Speed slider
+        const speedSlider = document.getElementById('speed-slider');
+        if (speedSlider) {
+            speedSlider.oninput = function() {
+                if (!currentAudio) return;
+                const speed = parseFloat(this.value);
+                currentAudio.playbackRate = speed;
+                document.getElementById('speed-value').textContent = speed.toFixed(2) + 'x';
+            };
+        }
+        
+        // Volume slider
+        const volumeSlider = document.getElementById('volume');
+        if (volumeSlider) {
+            volumeSlider.oninput = function() {
+                if (!currentAudio) return;
+                currentAudio.volume = this.value;
+                document.getElementById('vol-percent').textContent = 
+                    Math.round(this.value * 100) + '%';
+            };
+        }
+        
+        // Manual URL load
+        document.getElementById('load-url').onclick = function() {
+            const url = document.getElementById('audio-url').value;
+            if (url) loadManualAudio(url);
+        };
+        
+        // Close/Minimize
+        document.querySelector('.close').onclick = function() {
+            controller.style.transform = 'scale(0.8)';
+            setTimeout(() => controller.remove(), 300);
+        };
+        
+        document.querySelector('.minimize').onclick = function() {
+            isMinimized = !isMinimized;
+            controller.classList.toggle('minimized', isMinimized);
+            this.textContent = isMinimized ? '□' : '_';
+        };
+        
+        // Help button
+        document.querySelector('.help-btn').onclick = function() {
+            alert(`RAKIB SCRIPT HELP:\n\n1. If audio doesn't auto-detect:\n   - Go to Network tab (F12)\n   - Refresh page\n   - Find .mp3 file\n   - Right-click → Copy link address\n   - Paste in Manual URL field\n\n2. Use 0.5x speed for difficult listening\n\n3. Click header to drag controller`);
+        };
+    }
+    
+    // ===== DRAW FUNCTIONS =====
+    function setupDrawCanvas() {
+        const canvas = document.getElementById('draw-canvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+        
+        // Set background
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Start drawing
+        canvas.onmousedown = function(e) {
+            if (!isDrawing) return;
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        };
+        
+        // Draw
+        canvas.onmousemove = function(e) {
+            if (!drawing || !isDrawing) return;
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = drawColor;
+            ctx.lineWidth = drawSize;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        };
+        
+        // Stop drawing
+        canvas.onmouseup = function() {
+            drawing = false;
+        };
+        
+        canvas.onmouseleave = function() {
+            drawing = false;
+        };
+        
+        // Tool buttons
+        document.querySelectorAll('.tool-btn[data-color]').forEach(btn => {
+            btn.onclick = function() {
+                drawColor = this.dataset.color;
+            };
+        });
+        
+        // Clear button
+        document.getElementById('clear-draw').onclick = function() {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        };
+        
+        // Toggle draw mode
+        document.querySelector('.draw-toggle').onclick = function() {
+            isDrawing = !isDrawing;
+            canvas.style.cursor = isDrawing ? 'crosshair' : 'default';
+            updateStatus(isDrawing ? 'Draw Mode: ON' : 'Draw Mode: OFF');
+        };
+    }
+    
+    // ===== DRAG FUNCTIONALITY =====
+    function setupDrag() {
+        const header = document.getElementById('rakib-drag');
+        let isDragging = false;
+        let offsetX, offsetY;
+        
+        header.onmousedown = function(e) {
+            if (e.target.classList.contains('ctrl-btn')) return;
+            
+            isDragging = true;
+            offsetX = e.clientX - controller.getBoundingClientRect().left;
+            offsetY = e.clientY - controller.getBoundingClientRect().top;
+            
+            document.onmousemove = function(e) {
+                if (!isDragging) return;
+                controller.style.left = (e.clientX - offsetX) + 'px';
+                controller.style.top = (e.clientY - offsetY) + 'px';
+                controller.style.right = 'auto';
+            };
+            
+            document.onmouseup = function() {
+                isDragging = false;
+                document.onmousemove = null;
+                document.onmouseup = null;
+            };
+        };
+    }
+    
+    // ===== START =====
+    // Delay initialization for page load
+    setTimeout(init, 1000);
+    
+    // Auto-find media every 5 seconds
+    setInterval(() => {
+        if (!currentAudio) {
+            findAudio();
+        }
+    }, 5000);
+    
+})();
