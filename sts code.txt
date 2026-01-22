@@ -1,16 +1,16 @@
 // ============================================
-// RAKIB SCRIPT - IELTS Audio Controller
+// RAKIB SCRIPT - IELTS Audio Controller (Fixed)
 // ============================================
 (function() {
     'use strict';
     
-    console.log('🎵 RAKIB SCRIPT v2.0 - IELTS Optimized');
+    console.log('🎵 RAKIB SCRIPT v2.0 - Fixed Version');
     
     // Remove if exists
     const existing = document.getElementById('rakib-controller');
     if (existing) existing.remove();
     
-    // Create simple but effective controller
+    // Create controller
     const controller = document.createElement('div');
     controller.id = 'rakib-controller';
     controller.innerHTML = `
@@ -25,8 +25,8 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <button class="ctrl-btn minimize">_</button>
-                    <button class="ctrl-btn close">×</button>
+                    <button class="ctrl-btn minimize" title="Minimize">−</button>
+                    <button class="ctrl-btn close" title="Close">×</button>
                 </div>
             </div>
             
@@ -51,12 +51,10 @@
                 <!-- Transport -->
                 <div class="transport-section">
                     <div class="transport-row">
-                        <button class="trans-btn big back-10" title="Back 10s">⏪⏪</button>
-                        <button class="trans-btn back-5" title="Back 5s">⏪</button>
-                        <button class="trans-btn play" title="Play">▶️</button>
-                        <button class="trans-btn pause" title="Pause">⏸️</button>
-                        <button class="trans-btn forward-5" title="Forward 5s">⏩</button>
-                        <button class="trans-btn big forward-10" title="Forward 10s">⏩⏩</button>
+                        <button class="trans-btn back-5" title="Back 5 seconds">⏪ -5s</button>
+                        <button class="trans-btn play" title="Play">▶️ Play</button>
+                        <button class="trans-btn pause" title="Pause">⏸️ Pause</button>
+                        <button class="trans-btn forward-5" title="Forward 5 seconds">+5s ⏩</button>
                     </div>
                 </div>
                 
@@ -64,16 +62,14 @@
                 <div class="speed-section">
                     <div class="section-title">Speed Control</div>
                     <div class="speed-buttons">
-                        <button class="speed-btn" data-speed="0.25">0.25x</button>
                         <button class="speed-btn" data-speed="0.5">0.5x</button>
                         <button class="speed-btn" data-speed="0.75">0.75x</button>
                         <button class="speed-btn active" data-speed="1">1.0x</button>
                         <button class="speed-btn" data-speed="1.25">1.25x</button>
                         <button class="speed-btn" data-speed="1.5">1.5x</button>
-                        <button class="speed-btn" data-speed="2">2.0x</button>
                     </div>
                     <div class="speed-slider-container">
-                        <input type="range" id="speed-slider" min="0.1" max="3" step="0.1" value="1">
+                        <input type="range" id="speed-slider" min="0.25" max="3" step="0.05" value="1">
                         <span id="speed-value">1.0x</span>
                     </div>
                 </div>
@@ -83,44 +79,24 @@
                     <div class="section-title">Volume</div>
                     <div class="volume-control">
                         <span class="vol-icon">🔈</span>
-                        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7">
+                        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
                         <span class="vol-icon">🔊</span>
                         <span id="vol-percent">70%</span>
                     </div>
                 </div>
                 
-                <!-- Manual Audio URL -->
-                <div class="url-section">
-                    <div class="section-title">Manual Audio Source</div>
-                    <div class="url-input">
-                        <input type="text" id="audio-url" placeholder="Paste audio URL from Network tab">
-                        <button id="load-url">Load</button>
-                    </div>
-                    <div class="url-hint">
-                        <small>Get URL from: F12 → Network → Media → Right click → Copy link address</small>
-                    </div>
-                </div>
-                
-                <!-- Draw Section -->
-                <div class="draw-section">
-                    <div class="section-title draw-title">
-                        <span>Draw Mode</span>
-                        <button class="draw-toggle">✏️ Toggle</button>
-                    </div>
-                    <canvas id="draw-canvas" width="300" height="100"></canvas>
-                    <div class="draw-tools">
-                        <button class="tool-btn" data-color="red">🔴</button>
-                        <button class="tool-btn" data-color="blue">🔵</button>
-                        <button class="tool-btn" data-color="green">🟢</button>
-                        <button class="tool-btn" data-color="white">⚪</button>
-                        <button class="tool-btn" id="clear-draw">Clear</button>
-                    </div>
+                <!-- Audio Source -->
+                <div class="source-section">
+                    <div class="section-title">Audio Source</div>
+                    <select id="audio-source" class="source-select">
+                        <option value="">Select audio source...</option>
+                    </select>
                 </div>
             </div>
             
             <!-- Footer -->
             <div class="footer">
-                <span>RAKIB SCRIPT v2.0 | IELTS Mode</span>
+                <span>RAKIB SCRIPT v2.0</span>
                 <button class="help-btn">Help</button>
             </div>
         </div>
@@ -134,17 +110,18 @@
             top: 20px;
             right: 20px;
             z-index: 1000000;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
         
         .rakib-main {
             background: linear-gradient(145deg, #1a237e, #311b92);
             color: white;
             border-radius: 15px;
-            width: 350px;
+            width: 320px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             border: 2px solid rgba(255,255,255,0.1);
             overflow: hidden;
+            transition: all 0.3s ease;
         }
         
         /* Header */
@@ -165,17 +142,11 @@
         }
         
         .rakib-logo {
-            font-size: 28px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            font-size: 24px;
         }
         
         .rakib-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
         }
         
@@ -188,12 +159,13 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 5px;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             cursor: pointer;
             margin-left: 5px;
             font-size: 16px;
+            transition: all 0.2s;
         }
         
         .ctrl-btn:hover {
@@ -202,6 +174,10 @@
         
         .close:hover {
             background: #ff4757;
+        }
+        
+        .minimize:hover {
+            background: #ffa502;
         }
         
         /* Status */
@@ -219,8 +195,6 @@
         /* Controls Container */
         .controls-container {
             padding: 15px;
-            max-height: 500px;
-            overflow-y: auto;
         }
         
         /* Time Section */
@@ -231,7 +205,7 @@
         .time-display {
             text-align: center;
             font-family: 'Courier New', monospace;
-            font-size: 24px;
+            font-size: 20px;
             margin-bottom: 10px;
         }
         
@@ -245,9 +219,9 @@
         }
         
         .progress-bar {
-            height: 8px;
+            height: 6px;
             background: rgba(255,255,255,0.1);
-            border-radius: 4px;
+            border-radius: 3px;
             overflow: hidden;
         }
         
@@ -265,40 +239,38 @@
         
         .transport-row {
             display: flex;
-            justify-content: center;
-            gap: 10px;
-            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
         
         .trans-btn {
             background: linear-gradient(145deg, #1e88e5, #0d47a1);
             border: none;
             color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            font-size: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
         
         .trans-btn:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        
-        .trans-btn.big {
-            width: 60px;
-            font-size: 24px;
         }
         
         .play { background: linear-gradient(145deg, #00c853, #1b5e20); }
         .pause { background: linear-gradient(145deg, #ff9100, #e65100); }
-        .back-5, .back-10 { background: linear-gradient(145deg, #ff5722, #bf360c); }
-        .forward-5, .forward-10 { background: linear-gradient(145deg, #aa00ff, #4a148c); }
+        .back-5 { background: linear-gradient(145deg, #ff5722, #bf360c); }
+        .forward-5 { background: linear-gradient(145deg, #aa00ff, #4a148c); }
         
         /* Speed Control */
-        .speed-section, .volume-section, .url-section, .draw-section {
+        .speed-section, .volume-section, .source-section {
             background: rgba(0,0,0,0.2);
             border-radius: 10px;
             padding: 15px;
@@ -315,20 +287,21 @@
         }
         
         .speed-buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
             gap: 8px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
         }
         
         .speed-btn {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             color: white;
-            padding: 8px 5px;
+            padding: 8px 12px;
             border-radius: 6px;
             font-size: 12px;
             cursor: pointer;
+            transition: all 0.2s;
         }
         
         .speed-btn:hover {
@@ -356,8 +329,8 @@
         
         #speed-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             background: white;
             border-radius: 50%;
             border: 3px solid #00d2ff;
@@ -368,6 +341,7 @@
             font-weight: bold;
             color: #00d2ff;
             min-width: 40px;
+            font-size: 14px;
         }
         
         /* Volume */
@@ -392,6 +366,7 @@
             background: white;
             border-radius: 50%;
             border: 3px solid #00e676;
+            cursor: pointer;
         }
         
         #vol-percent {
@@ -399,79 +374,19 @@
             text-align: right;
             color: #00e676;
             font-weight: bold;
-        }
-        
-        /* URL Input */
-        .url-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        
-        #audio-url {
-            flex: 1;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.3);
-            color: white;
-        }
-        
-        #load-url {
-            background: #00d2ff;
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .url-hint small {
-            color: rgba(255,255,255,0.6);
-            font-size: 11px;
-        }
-        
-        /* Draw Section */
-        .draw-title {
-            margin-bottom: 15px;
-        }
-        
-        .draw-toggle {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        #draw-canvas {
-            width: 100%;
-            height: 100px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 5px;
-            border: 1px dashed rgba(255,255,255,0.2);
-            display: block;
-            margin-bottom: 10px;
-            cursor: crosshair;
-        }
-        
-        .draw-tools {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        
-        .tool-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
             font-size: 14px;
+        }
+        
+        /* Source Select */
+        .source-select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
         }
         
         /* Footer */
@@ -492,17 +407,25 @@
             padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 12px;
         }
         
         /* Minimized State */
-        .minimized {
+        .rakib-main.minimized {
             width: 200px;
             height: 60px;
-            overflow: hidden;
         }
         
-        .minimized .controls-container,
-        .minimized .footer {
+        .rakib-main.minimized .controls-container,
+        .rakib-main.minimized .footer {
+            display: none;
+        }
+        
+        .rakib-main.minimized .rakib-header {
+            padding: 10px 15px;
+        }
+        
+        .rakib-main.minimized .status-bar {
             display: none;
         }
     `;
@@ -512,90 +435,79 @@
     
     // ===== VARIABLES =====
     let currentAudio = null;
+    let audioSources = [];
     let isMinimized = false;
-    let isDrawing = false;
-    let drawColor = 'red';
-    let drawSize = 3;
     
     // ===== INITIALIZE =====
     function init() {
         console.log('🔧 RAKIB SCRIPT - Initializing...');
         
-        // Try to find existing audio
-        findAudio();
+        // Find audio sources
+        findAudioSources();
         
         // Setup event listeners
         setupControls();
-        setupDrawCanvas();
         setupDrag();
         
         // Update status
-        updateStatus('Ready - Use manual URL if auto-detection fails');
+        updateStatus('Ready to control audio');
         
         console.log('✅ RAKIB SCRIPT - Ready!');
     }
     
-    // ===== FIND AUDIO =====
-    function findAudio() {
-        // Method 1: Direct audio/video elements
+    // ===== FIND AUDIO SOURCES =====
+    function findAudioSources() {
+        audioSources = [];
+        
+        // Direct audio/video elements
         const mediaElements = document.querySelectorAll('audio, video');
         
-        if (mediaElements.length > 0) {
-            currentAudio = mediaElements[0];
-            updateStatus(`Found ${mediaElements.length} media element(s)`);
-            bindAudioEvents();
-            return;
-        }
-        
-        // Method 2: Check for iframes
-        const iframes = document.querySelectorAll('iframe');
-        iframes.forEach(iframe => {
-            try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                const iframeMedia = iframeDoc.querySelectorAll('audio, video');
-                if (iframeMedia.length > 0) {
-                    currentAudio = iframeMedia[0];
-                    updateStatus('Found media in iframe');
-                    bindAudioEvents();
-                }
-            } catch (e) {
-                // Cross-origin error
-            }
+        mediaElements.forEach((element, index) => {
+            audioSources.push({
+                element: element,
+                name: `Media ${index + 1} - ${element.tagName}`,
+                src: element.src || element.currentSrc || 'Unknown source'
+            });
         });
         
-        if (!currentAudio) {
-            updateStatus('No auto-detected audio. Use Manual URL.');
+        // Update source selector
+        const sourceSelect = document.getElementById('audio-source');
+        sourceSelect.innerHTML = '<option value="">Select audio source...</option>';
+        
+        audioSources.forEach((source, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = source.name;
+            sourceSelect.appendChild(option);
+        });
+        
+        // Select first source if available
+        if (audioSources.length > 0) {
+            selectAudioSource(0);
+        } else {
+            updateStatus('No audio found. Wait for audio to load.');
         }
+        
+        return audioSources.length;
     }
     
-    // ===== MANUAL AUDIO LOAD =====
-    function loadManualAudio(url) {
-        if (!url || !url.includes('http')) {
-            alert('Please enter a valid audio URL');
-            return;
+    // ===== SELECT AUDIO SOURCE =====
+    function selectAudioSource(index) {
+        if (index >= 0 && index < audioSources.length) {
+            currentAudio = audioSources[index].element;
+            
+            // Update selector
+            document.getElementById('audio-source').value = index;
+            
+            // Bind events
+            bindAudioEvents();
+            
+            // Update UI
+            updateTime();
+            updateVolumeDisplay();
+            
+            updateStatus(`Selected: ${audioSources[index].name}`);
         }
-        
-        // Remove existing audio
-        const oldAudio = document.getElementById('rakib-manual-audio');
-        if (oldAudio) oldAudio.remove();
-        
-        // Create new audio element
-        const audio = document.createElement('audio');
-        audio.id = 'rakib-manual-audio';
-        audio.src = url;
-        audio.controls = false;
-        audio.style.display = 'none';
-        
-        document.body.appendChild(audio);
-        currentAudio = audio;
-        
-        bindAudioEvents();
-        updateStatus(`Loaded: ${url.substring(0, 50)}...`);
-        
-        // Auto play
-        setTimeout(() => {
-            audio.play().catch(e => console.log('Auto-play blocked:', e));
-        }, 500);
     }
     
     // ===== BIND AUDIO EVENTS =====
@@ -607,44 +519,46 @@
         currentAudio.addEventListener('play', () => updateStatus('Playing'));
         currentAudio.addEventListener('pause', () => updateStatus('Paused'));
         currentAudio.addEventListener('ended', () => updateStatus('Finished'));
-        
-        // Update volume slider
-        const volSlider = document.getElementById('volume');
-        if (volSlider) {
-            volSlider.value = currentAudio.volume;
-            document.getElementById('vol-percent').textContent = 
-                Math.round(currentAudio.volume * 100) + '%';
-        }
-        
-        updateTime();
     }
     
     // ===== UPDATE FUNCTIONS =====
     function updateTime() {
         if (!currentAudio) return;
         
-        const current = document.getElementById('current');
-        const total = document.getElementById('total');
-        const progress = document.getElementById('progress');
+        const currentEl = document.getElementById('current');
+        const totalEl = document.getElementById('total');
+        const progressEl = document.getElementById('progress');
         
-        if (current && total && progress) {
-            current.textContent = formatTime(currentAudio.currentTime);
-            total.textContent = formatTime(currentAudio.duration || 0);
+        if (currentEl && totalEl && progressEl) {
+            currentEl.textContent = formatTime(currentAudio.currentTime);
+            totalEl.textContent = formatTime(currentAudio.duration || 0);
             
             const percent = currentAudio.duration ? 
                 (currentAudio.currentTime / currentAudio.duration * 100) : 0;
-            progress.style.width = percent + '%';
+            progressEl.style.width = percent + '%';
+        }
+    }
+    
+    function updateVolumeDisplay() {
+        if (!currentAudio) return;
+        
+        const volumeSlider = document.getElementById('volume');
+        const volumePercent = document.getElementById('vol-percent');
+        
+        if (volumeSlider && volumePercent) {
+            volumeSlider.value = currentAudio.volume;
+            volumePercent.textContent = Math.round(currentAudio.volume * 100) + '%';
         }
     }
     
     function updateStatus(message) {
-        const status = document.getElementById('status');
-        if (status) {
+        const statusEl = document.getElementById('status');
+        if (statusEl) {
             const icon = message.includes('Playing') ? '▶️' : 
                         message.includes('Paused') ? '⏸️' : 
-                        message.includes('Found') ? '✅' : 'ℹ️';
+                        message.includes('Ready') ? '✅' : 'ℹ️';
             
-            status.innerHTML = `<span class="status-icon">${icon}</span>
+            statusEl.innerHTML = `<span class="status-icon">${icon}</span>
                                <span class="status-text">${message}</span>`;
         }
     }
@@ -659,29 +573,38 @@
     // ===== CONTROL FUNCTIONS =====
     function setupControls() {
         // Play/Pause
-        document.querySelector('.play').onclick = () => {
-            if (currentAudio) currentAudio.play();
-        };
+        document.querySelector('.play').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.play().catch(e => {
+                    console.error('Play error:', e);
+                    updateStatus('Playback error - check console');
+                });
+            }
+        });
         
-        document.querySelector('.pause').onclick = () => {
+        document.querySelector('.pause').addEventListener('click', () => {
             if (currentAudio) currentAudio.pause();
-        };
+        });
         
-        // Skip buttons
-        document.querySelector('.back-5').onclick = () => skip(-5);
-        document.querySelector('.back-10').onclick = () => skip(-10);
-        document.querySelector('.forward-5').onclick = () => skip(5);
-        document.querySelector('.forward-10').onclick = () => skip(10);
+        // Skip buttons (5 seconds)
+        document.querySelector('.back-5').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 5);
+                updateTime();
+            }
+        });
         
-        function skip(seconds) {
-            if (!currentAudio) return;
-            currentAudio.currentTime += seconds;
-            updateTime();
-        }
+        document.querySelector('.forward-5').addEventListener('click', () => {
+            if (currentAudio) {
+                const newTime = Math.min(currentAudio.duration || 0, currentAudio.currentTime + 5);
+                currentAudio.currentTime = newTime;
+                updateTime();
+            }
+        });
         
         // Speed controls
         document.querySelectorAll('.speed-btn').forEach(btn => {
-            btn.onclick = function() {
+            btn.addEventListener('click', function() {
                 if (!currentAudio) return;
                 
                 const speed = parseFloat(this.dataset.speed);
@@ -696,111 +619,72 @@
                 document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
                 
                 updateStatus(`Speed: ${speed}x`);
-            };
+            });
         });
         
         // Speed slider
         const speedSlider = document.getElementById('speed-slider');
         if (speedSlider) {
-            speedSlider.oninput = function() {
+            speedSlider.addEventListener('input', function() {
                 if (!currentAudio) return;
                 const speed = parseFloat(this.value);
                 currentAudio.playbackRate = speed;
-                document.getElementById('speed-value').textContent = speed.toFixed(2) + 'x';
-            };
+                document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
+            });
         }
         
         // Volume slider
         const volumeSlider = document.getElementById('volume');
         if (volumeSlider) {
-            volumeSlider.oninput = function() {
+            volumeSlider.addEventListener('input', function() {
                 if (!currentAudio) return;
-                currentAudio.volume = this.value;
-                document.getElementById('vol-percent').textContent = 
-                    Math.round(this.value * 100) + '%';
-            };
+                currentAudio.volume = parseFloat(this.value);
+                document.getElementById('vol-percent').textContent = Math.round(this.value * 100) + '%';
+            });
         }
         
-        // Manual URL load
-        document.getElementById('load-url').onclick = function() {
-            const url = document.getElementById('audio-url').value;
-            if (url) loadManualAudio(url);
-        };
+        // Audio source selector
+        const sourceSelect = document.getElementById('audio-source');
+        if (sourceSelect) {
+            sourceSelect.addEventListener('change', function() {
+                const index = parseInt(this.value);
+                if (!isNaN(index)) {
+                    selectAudioSource(index);
+                }
+            });
+        }
         
-        // Close/Minimize
-        document.querySelector('.close').onclick = function() {
-            controller.style.transform = 'scale(0.8)';
-            setTimeout(() => controller.remove(), 300);
-        };
-        
-        document.querySelector('.minimize').onclick = function() {
-            isMinimized = !isMinimized;
-            controller.classList.toggle('minimized', isMinimized);
-            this.textContent = isMinimized ? '□' : '_';
-        };
-        
-        // Help button
-        document.querySelector('.help-btn').onclick = function() {
-            alert(`RAKIB SCRIPT HELP:\n\n1. If audio doesn't auto-detect:\n   - Go to Network tab (F12)\n   - Refresh page\n   - Find .mp3 file\n   - Right-click → Copy link address\n   - Paste in Manual URL field\n\n2. Use 0.5x speed for difficult listening\n\n3. Click header to drag controller`);
-        };
-    }
-    
-    // ===== DRAW FUNCTIONS =====
-    function setupDrawCanvas() {
-        const canvas = document.getElementById('draw-canvas');
-        const ctx = canvas.getContext('2d');
-        let drawing = false;
-        
-        // Set background
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Start drawing
-        canvas.onmousedown = function(e) {
-            if (!isDrawing) return;
-            drawing = true;
-            ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
-        };
-        
-        // Draw
-        canvas.onmousemove = function(e) {
-            if (!drawing || !isDrawing) return;
-            ctx.lineTo(e.offsetX, e.offsetY);
-            ctx.strokeStyle = drawColor;
-            ctx.lineWidth = drawSize;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-        };
-        
-        // Stop drawing
-        canvas.onmouseup = function() {
-            drawing = false;
-        };
-        
-        canvas.onmouseleave = function() {
-            drawing = false;
-        };
-        
-        // Tool buttons
-        document.querySelectorAll('.tool-btn[data-color]').forEach(btn => {
-            btn.onclick = function() {
-                drawColor = this.dataset.color;
-            };
+        // Close button
+        document.querySelector('.close').addEventListener('click', function() {
+            controller.style.opacity = '0';
+            setTimeout(() => {
+                controller.remove();
+            }, 300);
         });
         
-        // Clear button
-        document.getElementById('clear-draw').onclick = function() {
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        };
+        // Minimize button (toggle)
+        const minimizeBtn = document.querySelector('.minimize');
+        const rakibMain = document.querySelector('.rakib-main');
         
-        // Toggle draw mode
-        document.querySelector('.draw-toggle').onclick = function() {
-            isDrawing = !isDrawing;
-            canvas.style.cursor = isDrawing ? 'crosshair' : 'default';
-            updateStatus(isDrawing ? 'Draw Mode: ON' : 'Draw Mode: OFF');
-        };
+        minimizeBtn.addEventListener('click', function() {
+            isMinimized = !isMinimized;
+            rakibMain.classList.toggle('minimized', isMinimized);
+            
+            if (isMinimized) {
+                this.title = 'Maximize';
+                this.textContent = '+';
+                updateStatus('Minimized');
+            } else {
+                this.title = 'Minimize';
+                this.textContent = '−';
+                updateStatus('Maximized');
+            }
+        });
+        
+        // Help button
+        document.querySelector('.help-btn').addEventListener('click', function() {
+            alert(`RAKIB SCRIPT HELP:\n\n• Click header to drag\n• Use -5s/+5s to skip\n• Adjust speed for practice\n• Select audio source if multiple\n• Minimize when not needed`);
+        });
     }
     
     // ===== DRAG FUNCTIONALITY =====
@@ -809,37 +693,45 @@
         let isDragging = false;
         let offsetX, offsetY;
         
-        header.onmousedown = function(e) {
+        header.addEventListener('mousedown', function(e) {
             if (e.target.classList.contains('ctrl-btn')) return;
             
             isDragging = true;
             offsetX = e.clientX - controller.getBoundingClientRect().left;
             offsetY = e.clientY - controller.getBoundingClientRect().top;
             
-            document.onmousemove = function(e) {
-                if (!isDragging) return;
-                controller.style.left = (e.clientX - offsetX) + 'px';
-                controller.style.top = (e.clientY - offsetY) + 'px';
-                controller.style.right = 'auto';
-            };
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        });
+        
+        function drag(e) {
+            if (!isDragging) return;
             
-            document.onmouseup = function() {
-                isDragging = false;
-                document.onmousemove = null;
-                document.onmouseup = null;
-            };
-        };
+            controller.style.left = (e.clientX - offsetX) + 'px';
+            controller.style.top = (e.clientY - offsetY) + 'px';
+            controller.style.right = 'auto';
+        }
+        
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
     }
     
     // ===== START =====
-    // Delay initialization for page load
-    setTimeout(init, 1000);
+    // Wait for page to load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        setTimeout(init, 500);
+    }
     
-    // Auto-find media every 5 seconds
+    // Auto refresh audio sources every 3 seconds
     setInterval(() => {
-        if (!currentAudio) {
-            findAudio();
+        if (audioSources.length === 0) {
+            findAudioSources();
         }
-    }, 5000);
+    }, 3000);
     
 })();
