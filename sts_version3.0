@@ -1,0 +1,766 @@
+// ============================================
+// RAKIB SCRIPT - IELTS Audio Controller (Fixed & Responsive)
+// ============================================
+(function() {
+    'use strict';
+    
+    console.log('🎵 RAKIB SCRIPT v2.1 - Responsive');
+    
+    // Remove if exists
+    const existing = document.getElementById('rakib-controller');
+    if (existing) existing.remove();
+    
+    // Create controller
+    const controller = document.createElement('div');
+    controller.id = 'rakib-controller';
+    controller.innerHTML = `
+        <div class="rakib-main">
+            <!-- Header -->
+            <div class="rakib-header" id="rakib-drag">
+                <div class="header-left">
+                    <span class="rakib-logo">🎵</span>
+                    <div>
+                        <div class="rakib-title">IELTS Audio</div>
+                        <div class="rakib-sub">RAKIB SCRIPT</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="ctrl-btn minimize" title="Minimize">−</button>
+                    <button class="ctrl-btn close" title="Close">×</button>
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div class="status-bar" id="status">
+                <span class="status-icon">🔍</span>
+                <span class="status-text">Initializing...</span>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls-container">
+                <!-- Time Display -->
+                <div class="time-section">
+                    <div class="time-display">
+                        <span id="current">0:00</span> / <span id="total">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress"></div>
+                    </div>
+                </div>
+                
+                <!-- Transport -->
+                <div class="transport-section">
+                    <div class="transport-row">
+                        <button class="trans-btn back-5" title="Back 5 seconds">⏪ -5s</button>
+                        <button class="trans-btn play" title="Play">▶️ Play</button>
+                        <button class="trans-btn pause" title="Pause">⏸️ Pause</button>
+                        <button class="trans-btn forward-5" title="Forward 5 seconds">+5s ⏩</button>
+                    </div>
+                </div>
+                
+                <!-- Speed Control -->
+                <div class="speed-section">
+                    <div class="section-title">
+                        <span>Speed</span>
+                        <span id="speed-value">1.0x</span>
+                    </div>
+                    <div class="speed-slider-container">
+                        <input type="range" id="speed-slider" min="0.25" max="3" step="0.05" value="1">
+                        <div class="speed-presets">
+                            <button class="speed-preset" data-speed="0.5">0.5x</button>
+                            <button class="speed-preset" data-speed="0.75">0.75x</button>
+                            <button class="speed-preset active" data-speed="1">1.0x</button>
+                            <button class="speed-preset" data-speed="1.25">1.25x</button>
+                            <button class="speed-preset" data-speed="1.5">1.5x</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Volume Control -->
+                <div class="volume-section">
+                    <div class="section-title">
+                        <span>Volume</span>
+                        <span id="vol-percent">70%</span>
+                    </div>
+                    <div class="volume-control">
+                        <span class="vol-icon">🔈</span>
+                        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
+                        <span class="vol-icon">🔊</span>
+                    </div>
+                </div>
+                
+                <!-- Audio Source -->
+                <div class="source-section">
+                    <div class="section-title">Audio Source</div>
+                    <select id="audio-source" class="source-select">
+                        <option value="">Select audio...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                <span>🎧 IELTS Listening Tool</span>
+                <button class="help-btn" title="Help">?</button>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        #rakib-controller {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Responsive sizing */
+        @media (max-width: 768px) {
+            #rakib-controller {
+                width: 95vw;
+                max-width: 400px;
+                left: 50%;
+                transform: translateX(-50%);
+                right: auto;
+                bottom: 10px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            #rakib-controller {
+                width: 320px;
+            }
+        }
+        
+        .rakib-main {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            color: white;
+            border-radius: 12px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        /* Header - Compact */
+        .rakib-header {
+            background: linear-gradient(90deg, #0f3460, #1a1a2e);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+            min-height: 50px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .rakib-logo {
+            font-size: 20px;
+        }
+        
+        .rakib-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .rakib-sub {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
+        .ctrl-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .close:hover {
+            background: #ff4757;
+        }
+        
+        .minimize:hover {
+            background: #ffa502;
+        }
+        
+        /* Status - Compact */
+        .status-bar {
+            background: rgba(0,0,0,0.2);
+            padding: 8px 12px;
+            font-size: 11px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .status-icon {
+            margin-right: 6px;
+        }
+        
+        /* Controls Container */
+        .controls-container {
+            padding: 12px;
+        }
+        
+        /* Time Section */
+        .time-section {
+            margin-bottom: 15px;
+        }
+        
+        .time-display {
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        #current {
+            color: #4cc9f0;
+            font-weight: bold;
+        }
+        
+        #total {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4361ee, #4cc9f0);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        /* Transport - Compact */
+        .transport-section {
+            margin: 15px 0;
+        }
+        
+        .transport-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .trans-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px 5px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 45px;
+            white-space: nowrap;
+        }
+        
+        .trans-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .play { background: rgba(76, 201, 240, 0.3); }
+        .pause { background: rgba(255, 183, 3, 0.3); }
+        .back-5 { background: rgba(239, 71, 111, 0.3); }
+        .forward-5 { background: rgba(6, 214, 160, 0.3); }
+        
+        /* Speed Control - Compact */
+        .speed-section, .volume-section, .source-section {
+            background: rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #4cc9f0;
+        }
+        
+        .speed-slider-container {
+            margin-top: 10px;
+        }
+        
+        #speed-slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #4361ee, #4cc9f0);
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+        
+        #speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #4361ee;
+            cursor: pointer;
+        }
+        
+        .speed-presets {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+        
+        .speed-preset {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 6px 3px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .speed-preset:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .speed-preset.active {
+            background: #4361ee;
+            font-weight: bold;
+        }
+        
+        /* Volume - Compact */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        #volume {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #4cc9f0, #4361ee);
+            border-radius: 3px;
+        }
+        
+        #volume::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #4cc9f0;
+            cursor: pointer;
+        }
+        
+        .vol-icon {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        /* Source Select - Compact */
+        .source-select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        /* Footer - Compact */
+        .footer {
+            background: rgba(0,0,0,0.2);
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .help-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .help-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Minimized State - Even smaller */
+        .rakib-main.minimized {
+            width: 180px !important;
+            height: 40px;
+        }
+        
+        .rakib-main.minimized .controls-container,
+        .rakib-main.minimized .footer,
+        .rakib-main.minimized .status-bar {
+            display: none;
+        }
+        
+        .rakib-main.minimized .rakib-header {
+            padding: 5px 10px;
+            min-height: 40px;
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(controller);
+    
+    // ===== VARIABLES =====
+    let currentAudio = null;
+    let audioSources = [];
+    let isMinimized = false;
+    
+    // ===== INITIALIZE =====
+    function init() {
+        console.log('🔧 RAKIB SCRIPT - Initializing...');
+        
+        // Find audio sources
+        findAudioSources();
+        
+        // Setup event listeners
+        setupControls();
+        setupDrag();
+        
+        // Update status
+        updateStatus('Ready to control audio');
+        
+        console.log('✅ RAKIB SCRIPT - Ready!');
+    }
+    
+    // ===== FIND AUDIO SOURCES =====
+    function findAudioSources() {
+        audioSources = [];
+        
+        // Direct audio/video elements
+        const mediaElements = document.querySelectorAll('audio, video');
+        
+        mediaElements.forEach((element, index) => {
+            audioSources.push({
+                element: element,
+                name: `Audio ${index + 1} (${element.tagName})`,
+                src: element.src || element.currentSrc || 'Unknown'
+            });
+        });
+        
+        // Update source selector
+        const sourceSelect = document.getElementById('audio-source');
+        sourceSelect.innerHTML = '<option value="">Select audio...</option>';
+        
+        audioSources.forEach((source, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = source.name;
+            sourceSelect.appendChild(option);
+        });
+        
+        // Select first source if available
+        if (audioSources.length > 0) {
+            selectAudioSource(0);
+        } else {
+            updateStatus('No audio found. Wait for audio to load.');
+        }
+        
+        return audioSources.length;
+    }
+    
+    // ===== SELECT AUDIO SOURCE =====
+    function selectAudioSource(index) {
+        if (index >= 0 && index < audioSources.length) {
+            currentAudio = audioSources[index].element;
+            
+            // Update selector
+            document.getElementById('audio-source').value = index;
+            
+            // Bind events
+            bindAudioEvents();
+            
+            // Update UI
+            updateTime();
+            updateVolumeDisplay();
+            
+            updateStatus(`Selected: ${audioSources[index].name}`);
+        }
+    }
+    
+    // ===== BIND AUDIO EVENTS =====
+    function bindAudioEvents() {
+        if (!currentAudio) return;
+        
+        currentAudio.addEventListener('timeupdate', updateTime);
+        currentAudio.addEventListener('loadedmetadata', updateTime);
+        currentAudio.addEventListener('play', () => updateStatus('Playing'));
+        currentAudio.addEventListener('pause', () => updateStatus('Paused'));
+        currentAudio.addEventListener('ended', () => updateStatus('Finished'));
+    }
+    
+    // ===== UPDATE FUNCTIONS =====
+    function updateTime() {
+        if (!currentAudio) return;
+        
+        const currentEl = document.getElementById('current');
+        const totalEl = document.getElementById('total');
+        const progressEl = document.getElementById('progress');
+        
+        if (currentEl && totalEl && progressEl) {
+            currentEl.textContent = formatTime(currentAudio.currentTime);
+            totalEl.textContent = formatTime(currentAudio.duration || 0);
+            
+            const percent = currentAudio.duration ? 
+                (currentAudio.currentTime / currentAudio.duration * 100) : 0;
+            progressEl.style.width = percent + '%';
+        }
+    }
+    
+    function updateVolumeDisplay() {
+        if (!currentAudio) return;
+        
+        const volumeSlider = document.getElementById('volume');
+        const volumePercent = document.getElementById('vol-percent');
+        
+        if (volumeSlider && volumePercent) {
+            volumeSlider.value = currentAudio.volume;
+            volumePercent.textContent = Math.round(currentAudio.volume * 100) + '%';
+        }
+    }
+    
+    function updateStatus(message) {
+        const statusEl = document.getElementById('status');
+        if (statusEl) {
+            const icon = message.includes('Playing') ? '▶️' : 
+                        message.includes('Paused') ? '⏸️' : 
+                        message.includes('Ready') ? '✅' : 'ℹ️';
+            
+            statusEl.innerHTML = `<span class="status-icon">${icon}</span>
+                               <span class="status-text">${message}</span>`;
+        }
+    }
+    
+    function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+    
+    // ===== CONTROL FUNCTIONS =====
+    function setupControls() {
+        // Play/Pause
+        document.querySelector('.play').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.play().catch(e => {
+                    console.error('Play error:', e);
+                    updateStatus('Playback error');
+                });
+            }
+        });
+        
+        document.querySelector('.pause').addEventListener('click', () => {
+            if (currentAudio) currentAudio.pause();
+        });
+        
+        // Skip buttons (5 seconds)
+        document.querySelector('.back-5').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 5);
+                updateTime();
+            }
+        });
+        
+        document.querySelector('.forward-5').addEventListener('click', () => {
+            if (currentAudio) {
+                const newTime = Math.min(currentAudio.duration || 0, currentAudio.currentTime + 5);
+                currentAudio.currentTime = newTime;
+                updateTime();
+            }
+        });
+        
+        // Speed presets
+        document.querySelectorAll('.speed-preset').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!currentAudio) return;
+                
+                const speed = parseFloat(this.dataset.speed);
+                currentAudio.playbackRate = speed;
+                
+                // Update UI
+                document.querySelectorAll('.speed-preset').forEach(b => 
+                    b.classList.remove('active'));
+                this.classList.add('active');
+                
+                document.getElementById('speed-slider').value = speed;
+                document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
+                
+                updateStatus(`Speed: ${speed}x`);
+            });
+        });
+        
+        // Speed slider
+        const speedSlider = document.getElementById('speed-slider');
+        if (speedSlider) {
+            speedSlider.addEventListener('input', function() {
+                if (!currentAudio) return;
+                const speed = parseFloat(this.value);
+                currentAudio.playbackRate = speed;
+                document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
+                
+                // Update preset buttons
+                document.querySelectorAll('.speed-preset').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (Math.abs(parseFloat(btn.dataset.speed) - speed) < 0.1) {
+                        btn.classList.add('active');
+                    }
+                });
+            });
+        }
+        
+        // Volume slider
+        const volumeSlider = document.getElementById('volume');
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', function() {
+                if (!currentAudio) return;
+                currentAudio.volume = parseFloat(this.value);
+                document.getElementById('vol-percent').textContent = Math.round(this.value * 100) + '%';
+            });
+        }
+        
+        // Audio source selector
+        const sourceSelect = document.getElementById('audio-source');
+        if (sourceSelect) {
+            sourceSelect.addEventListener('change', function() {
+                const index = parseInt(this.value);
+                if (!isNaN(index)) {
+                    selectAudioSource(index);
+                }
+            });
+        }
+        
+        // Close button
+        document.querySelector('.close').addEventListener('click', function() {
+            controller.style.opacity = '0';
+            setTimeout(() => {
+                controller.remove();
+            }, 300);
+        });
+        
+        // Minimize button (toggle)
+        const minimizeBtn = document.querySelector('.minimize');
+        const rakibMain = document.querySelector('.rakib-main');
+        
+        minimizeBtn.addEventListener('click', function() {
+            isMinimized = !isMinimized;
+            rakibMain.classList.toggle('minimized', isMinimized);
+            
+            if (isMinimized) {
+                this.title = 'Maximize';
+                this.textContent = '+';
+                updateStatus('Minimized');
+            } else {
+                this.title = 'Minimize';
+                this.textContent = '−';
+                updateStatus('Maximized');
+            }
+        });
+        
+        // Help button
+        document.querySelector('.help-btn').addEventListener('click', function() {
+            alert(`IELTS Audio Controller\n\nShortcuts:\n- Click header to drag\n- -5s/+5s to skip\n- Adjust speed for practice\n- Minimize when not needed\n- Select audio source`);
+        });
+    }
+    
+    // ===== DRAG FUNCTIONALITY =====
+    function setupDrag() {
+        const header = document.getElementById('rakib-drag');
+        let isDragging = false;
+        let offsetX, offsetY;
+        
+        header.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('ctrl-btn')) return;
+            
+            isDragging = true;
+            offsetX = e.clientX - controller.getBoundingClientRect().left;
+            offsetY = e.clientY - controller.getBoundingClientRect().top;
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        });
+        
+        function drag(e) {
+            if (!isDragging) return;
+            
+            controller.style.left = (e.clientX - offsetX) + 'px';
+            controller.style.top = (e.clientY - offsetY) + 'px';
+            controller.style.right = 'auto';
+        }
+        
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+    }
+    
+    // ===== START =====
+    // Wait for page to load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        setTimeout(init, 500);
+    }
+    
+    // Auto refresh audio sources
+    setInterval(() => {
+        if (audioSources.length === 0) {
+            findAudioSources();
+        }
+    }, 3000);
+    
+})();
